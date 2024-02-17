@@ -18,7 +18,7 @@ func main() {
 	}
 	ctx := context.Background()
 
-	content, err := ioutil.ReadFile("prompt.txt")
+	content, err := ioutil.ReadFile("../../prompt.txt")
 	if err != nil {
 		panic("prompt.txt does not exist")
 	}

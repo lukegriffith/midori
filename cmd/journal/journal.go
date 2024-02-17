@@ -1,13 +1,12 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/lukegriffith/midori/pkg/db"
 	"github.com/urfave/cli/v2"
 )
 
@@ -21,22 +20,8 @@ type JournalEntry struct {
 
 func main() {
 	// Open SQLite database
-	db, err := sql.Open("sqlite3", "journal.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
-	// Create journal_entries table if not exists
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS journal_entries (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-		command TEXT,
-		context TEXT
-	)`)
-	if err != nil {
-		log.Fatal(err)
-	}
+	db := db.GetDBCon()
+	var err error
 
 	// Initialize CLI app
 	app := &cli.App{
