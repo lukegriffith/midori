@@ -15,15 +15,18 @@ var (
 )
 
 const (
-	dbFile                 = ".midori.db"
-	dbEngine               = "sqlite3"
-	journal_table_creation = `CREATE TABLE IF NOT EXISTS journal (
+	dbFile               = ".midori.db"
+	dbEngine             = "sqlite3"
+	journalTableCreation = `CREATE TABLE IF NOT EXISTS journal (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		command TEXT,
 		context TEXT,
 		entryType TEXT
 	)`
+
+	getEntries = "SELECT id, timestamp, command, context, entryType FROM journal ORDER BY timestamp DESC"
+	addEntry   = "INSERT INTO journal (command, context, entryType) VALUES (?, ?, ?)"
 )
 
 // JournalEntry represents the structure of a journal entry
@@ -49,13 +52,13 @@ func init() {
 	setupTables()
 }
 
-func GetDBCon() *sql.DB {
-	return db
+func Close() {
+	db.Close()
 }
 
 func setupTables() {
 	// Create journal_entries table if not exists
-	_, err = db.Exec(journal_table_creation)
+	_, err = db.Exec(journalTableCreation)
 	if err != nil {
 		log.Fatal("Error creating table:", err)
 	}
@@ -63,7 +66,7 @@ func setupTables() {
 
 func GetEntries() ([]JournalEntry, error) {
 	var err error
-	rows, err := db.Query("SELECT id, timestamp, command, context, entryType FROM journal ORDER BY timestamp DESC")
+	rows, err := db.Query(getEntries)
 	if err != nil {
 		return []JournalEntry{}, err
 	}
@@ -84,7 +87,7 @@ func GetEntries() ([]JournalEntry, error) {
 
 func AddEntry(command, context, typeStr string) error {
 	// Insert new entry into the database
-	_, err := db.Exec("INSERT INTO journal (command, context, entryType) VALUES (?, ?, ?)", command, context, typeStr)
+	_, err := db.Exec(addEntry, command, context, typeStr)
 	if err != nil {
 		return err
 	}

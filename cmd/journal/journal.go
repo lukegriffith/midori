@@ -11,8 +11,7 @@ import (
 
 func main() {
 	// Open SQLite database
-	dbCon := db.GetDBCon()
-	defer dbCon.Close()
+	defer db.Close()
 	var err error
 
 	// Initialize CLI app
@@ -58,6 +57,9 @@ func Add(c *cli.Context) error {
 		return err
 	}
 
+	if typeStr == "command" {
+		return nil
+	}
 	fmt.Println("Journal entry added successfully.")
 	return nil
 }
