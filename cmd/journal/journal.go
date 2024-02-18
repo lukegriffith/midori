@@ -4,23 +4,15 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/lukegriffith/midori/pkg/db"
 	"github.com/urfave/cli/v2"
 )
 
-// JournalEntry represents the structure of a journal entry
-type JournalEntry struct {
-	ID        int
-	Timestamp time.Time
-	Command   string
-	Context   string
-}
-
 func main() {
 	// Open SQLite database
-	db := db.GetDBCon()
+	dbCon := db.GetDBCon()
+	defer dbCon.Close()
 	var err error
 
 	// Initialize CLI app
@@ -32,48 +24,13 @@ func main() {
 				Name:    "add",
 				Aliases: []string{"a"},
 				Usage:   "Add a new journal entry",
-				Action: func(c *cli.Context) error {
-					command := c.Args().First()
-					context := c.Args().Get(1)
-
-					if command == "" {
-						return fmt.Errorf("please provide a command")
-					}
-
-					// Insert new entry into the database
-					_, err := db.Exec("INSERT INTO journal_entries (command, context) VALUES (?, ?)", command, context)
-					if err != nil {
-						return err
-					}
-
-					fmt.Println("Journal entry added successfully.")
-					return nil
-				},
+				Action:  Add,
 			},
 			{
 				Name:    "list",
 				Aliases: []string{"l"},
 				Usage:   "List all journal entries",
-				Action: func(c *cli.Context) error {
-					rows, err := db.Query("SELECT id, timestamp, command, context FROM journal_entries ORDER BY timestamp DESC")
-					if err != nil {
-						return err
-					}
-					defer rows.Close()
-
-					fmt.Println("ID\tTimestamp\t\tCommand\t\tContext")
-					fmt.Println("----------------------------------------------")
-					for rows.Next() {
-						var entry JournalEntry
-						err := rows.Scan(&entry.ID, &entry.Timestamp, &entry.Command, &entry.Context)
-						if err != nil {
-							return err
-						}
-						fmt.Printf("%d\t%s\t%s\t%s\n", entry.ID, entry.Timestamp.Format("2006-01-02 15:04:05"), entry.Command, entry.Context)
-					}
-
-					return nil
-				},
+				Action:  List,
 			},
 		},
 	}
@@ -83,4 +40,39 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func Add(c *cli.Context) error {
+	var err error
+	command := c.Args().First()
+	context := c.Args().Get(1)
+	typeStr := c.Args().Get(2)
+
+	if command == "" {
+		return fmt.Errorf("please provide a command")
+	}
+
+	// Insert new entry into the database
+	db.AddEntry(command, context, typeStr)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Journal entry added successfully.")
+	return nil
+}
+
+func List(c *cli.Context) error {
+
+	entries, err := db.GetEntries()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("ID\tTimestamp\t\tCommand\t\tContext\t\tType")
+	fmt.Println("----------------------------------------------")
+	for _, entry := range entries {
+		fmt.Printf("%d\t%s\t%s\t%s\t%s\n", entry.ID, entry.Timestamp.Format("2006-01-02 15:04:05"), entry.Command, entry.Context, entry.Type)
+	}
+	return nil
 }
