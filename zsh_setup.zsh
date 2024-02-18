@@ -2,7 +2,7 @@
 log_command() {
     local cmd="${1[0, -2]}"
     if [[ -n "$cmd" ]]; then
-        journal add "$cmd" $PWD "command"
+        journal add --cmd "$cmd" 
     fi
 }
 
