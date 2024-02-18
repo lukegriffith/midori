@@ -25,8 +25,17 @@ const (
 		entryType TEXT
 	)`
 
-	getEntries = "SELECT id, timestamp, command, context, entryType FROM journal ORDER BY timestamp DESC"
-	addEntry   = "INSERT INTO journal (command, context, entryType) VALUES (?, ?, ?)"
+	getEntries = `SELECT id, timestamp, command, context, entryType 
+	FROM journal 
+		WHERE entryType == 'journal'
+	ORDER BY timestamp DESC`
+
+	addEntry = "INSERT INTO journal (command, context, entryType) VALUES (?, ?, ?)"
+
+	groupEntries = `SELECT command, context, COUNT(*)
+	FROM journal
+			WHERE entryType == 'command'
+	GROUP BY command, context`
 )
 
 // JournalEntry represents the structure of a journal entry
@@ -93,4 +102,28 @@ func AddEntry(command, context, typeStr string) error {
 	}
 
 	return nil
+}
+
+type GroupedJournals struct {
+	Command, Context string
+	Count            int
+}
+
+func GroupEntries() ([]GroupedJournals, error) {
+	rows, err := db.Query(groupEntries)
+	if err != nil {
+		return []GroupedJournals{}, err
+	}
+
+	var group []GroupedJournals
+
+	for rows.Next() {
+		var grouped GroupedJournals
+		err := rows.Scan(&grouped.Command, &grouped.Context, &grouped.Count)
+		if err != nil {
+			return []GroupedJournals{}, err
+		}
+		group = append(group, grouped)
+	}
+	return group, nil
 }

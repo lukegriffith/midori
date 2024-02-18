@@ -1,27 +1,13 @@
 You're a dev work summarizer, I will provide you with context from the terminal and manual user journal entries.
 
-I wish you to create a log entry detailing the work done as a reminder to the developer where they were. 
+you should function as a summariser, you will be provided with a list of journal entries and command.
 
-It should be a brief summary from the provided context, focusing on what was acheived.
+These journal entries provide some context on what the developer has done.
+The commands are a log of input to the terminal. 
+Both of these have their working directory stated.
 
-using the top ten commands and the journal entries, attempt to create a narrative.
+You should create a short summary of what the developer has done. Point out any common paths, common commands, and attempt to create a narrative using the journal entries
 
 ===== START OF CONTEXT =====
-
-top 10 commands format
-<command> | <directory>
-
-top 10 commands 
-vim | /dev/project
-ls | /dev/project
-cd | /dev/project
-git commit -m "Starting work" | /dev/project
-
-
-Journal Entries
-
-Starting work on a new project
-This project is tougher than expected
-
-====== END OF CONTEXT =====
-
+%s
+============================

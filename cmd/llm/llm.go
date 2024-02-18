@@ -9,6 +9,8 @@ import (
 	"github.com/tmc/langchaingo/llms/ollama"
 
 	"io/ioutil"
+
+	"github.com/lukegriffith/midori/pkg/journal"
 )
 
 func main() {
@@ -18,15 +20,25 @@ func main() {
 	}
 	ctx := context.Background()
 
-	content, err := ioutil.ReadFile("../../prompt.txt")
+	content, err := ioutil.ReadFile("prompt.txt")
 	if err != nil {
-		panic("prompt.txt does not exist")
+		log.Fatal("prompt.txt does not exist", err)
 	}
+
+	jContent, err := journal.ListJournal()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	prompt := fmt.Sprintf(string(content), jContent)
+
+	fmt.Println(prompt)
 
 	completion, err := llms.GenerateFromSinglePrompt(
 		ctx,
 		llm,
-		string(content),
+		prompt,
 		llms.WithTemperature(0.8),
 		llms.WithStreamingFunc(func(ctx context.Context, chunk []byte) error {
 			fmt.Print(string(chunk))

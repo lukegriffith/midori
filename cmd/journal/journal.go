@@ -2,16 +2,17 @@ package main
 
 import (
 	"fmt"
+	"github.com/lukegriffith/midori/pkg/journal"
+	"github.com/urfave/cli/v2"
 	"log"
 	"os"
-
-	"github.com/lukegriffith/midori/pkg/db"
-	"github.com/urfave/cli/v2"
 )
+
+var isCmd bool
 
 func main() {
 	// Open SQLite database
-	defer db.Close()
+	defer journal.Close()
 	var err error
 
 	// Initialize CLI app
@@ -23,13 +24,26 @@ func main() {
 				Name:    "add",
 				Aliases: []string{"a"},
 				Usage:   "Add a new journal entry",
-				Action:  Add,
+				Action:  add,
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:        "cmd",
+						Value:       false,
+						Destination: &isCmd,
+					},
+				},
+			},
+			{
+				Name:    "summarise",
+				Aliases: []string{"s", "llm"},
+				Usage:   "Summarise current journal",
+				Action:  summarise,
 			},
 			{
 				Name:    "list",
 				Aliases: []string{"l"},
 				Usage:   "List all journal entries",
-				Action:  List,
+				Action:  list,
 			},
 		},
 	}
@@ -41,40 +55,42 @@ func main() {
 	}
 }
 
-func Add(c *cli.Context) error {
+func add(c *cli.Context) error {
 	var err error
-	command := c.Args().First()
-	context := c.Args().Get(1)
-	typeStr := c.Args().Get(2)
+	entry := c.Args().First()
 
-	if command == "" {
+	if entry == "" {
 		return fmt.Errorf("please provide a command")
 	}
 
-	// Insert new entry into the database
-	db.AddEntry(command, context, typeStr)
+	pwd, err := os.Getwd()
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to determine PWD")
 	}
 
-	if typeStr == "command" {
-		return nil
+	if isCmd {
+		err = journal.AddCommand(entry, pwd)
+		if err != nil {
+			return err
+		}
+
+	} else {
+		err = journal.AddJournal(entry, pwd)
+		if err != nil {
+			return err
+		}
+		fmt.Println("Journal entry added successfully.")
 	}
-	fmt.Println("Journal entry added successfully.")
+
 	return nil
 }
 
-func List(c *cli.Context) error {
+func list(c *cli.Context) error {
+	output, err := journal.ListJournal()
+	fmt.Println(output)
+	return err
+}
 
-	entries, err := db.GetEntries()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("ID\tTimestamp\t\tCommand\t\tContext\t\tType")
-	fmt.Println("----------------------------------------------")
-	for _, entry := range entries {
-		fmt.Printf("%d\t%s\t%s\t%s\t%s\n", entry.ID, entry.Timestamp.Format("2006-01-02 15:04:05"), entry.Command, entry.Context, entry.Type)
-	}
+func summarise(c *cli.Context) error {
 	return nil
 }
